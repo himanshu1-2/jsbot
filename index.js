@@ -8,10 +8,10 @@ const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) +
 
 const FILE_PATH = './data.json';
 
-const makeCommit = (n) => {
+const makeCommit = async(n) => {
   if (n === 0) {
     console.log("Pushing changes to the remote repository...");
-    simpleGit().push();
+    await simpleGit().push('origin', 'main');
     return;
   }
 
