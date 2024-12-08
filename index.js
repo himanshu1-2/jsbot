@@ -1,44 +1,55 @@
 const jsonfile = require('jsonfile');
 const moment = require('moment');
 const simpleGit = require('simple-git');
-const FILE_PATH = './data.json';
+const random = require('random');
 
 // Helper function to generate a random integer between min and max (inclusive)
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-const makeCommit = async (n) => {
+const FILE_PATH = './data.json';
+
+const makeCommit = (n) => {
   if (n === 0) {
-    console.log("Pushing changes to the repository...");
-    await simpleGit().push();
+    console.log("Pushing changes to the remote repository...");
+    simpleGit().push();
     return;
   }
 
-  // Generate random values for date adjustment
+  // Generate random weeks and days
   const x = getRandomInt(0, 54); // Number of weeks
   const y = getRandomInt(0, 6);  // Number of days
 
   // Adjust the date
   const DATE = moment()
     .subtract(1, 'y') // Go back one year
+    .add(1, 'd')      // Add one day to avoid today
     .add(x, 'w')      // Add random weeks
     .add(y, 'd')      // Add random days
-    .format();        // Format as ISO string
+    .format();
 
-  // Create data object for writing to the JSON file
   const data = { date: DATE };
 
-  console.log(`Committing with date: ${DATE}`);
+  console.log(`Committing for date: ${DATE}`);
 
-  // Write to the JSON file and commit changes
-  jsonfile.writeFile(FILE_PATH, data, { spaces: 2 }, async (err) => {
+  // Write the date to the JSON file and commit
+  jsonfile.writeFile(FILE_PATH, data, { spaces: 2 }, (err) => {
     if (err) {
       console.error('Error writing file:', err);
       return;
     }
-    await simpleGit().add(FILE_PATH).commit(`Commit for date: ${DATE}`, { '--date': DATE });
-    makeCommit(n - 1); // Recursive call for the next commit
+
+    simpleGit()
+      .add(FILE_PATH)
+      .commit(`Commit for date: ${DATE}`, { '--date': DATE })
+      .then(() => {
+        // Recursive call after the current commit completes
+        makeCommit(n - 1);
+      })
+      .catch((commitErr) => {
+        console.error('Error committing:', commitErr);
+      });
   });
 };
 
-// Start the commit process with 500 commits
+// Start the commit process with 100 commits
 makeCommit(10);
