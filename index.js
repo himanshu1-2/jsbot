@@ -1,55 +1,42 @@
 const jsonfile = require('jsonfile');
 const moment = require('moment');
 const simpleGit = require('simple-git');
-const random = require('random');
+const FILE_PATH = './data.json';
 
 // Helper function to generate a random integer between min and max (inclusive)
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-const FILE_PATH = './data.json';
-
-const makeCommit = async(n) => {
+const makeCommit = async (n) => {
   if (n === 0) {
     console.log("Pushing changes to the remote repository...");
-    await simpleGit().push('origin', 'main');
+    await simpleGit().push('origin', 'main'); // Explicitly push to the remote 'origin' and branch 'main'
+    console.log("Push complete.");
     return;
   }
 
-  // Generate random weeks and days
-  const x = getRandomInt(0, 54); // Number of weeks
-  const y = getRandomInt(0, 6);  // Number of days
+  const x = getRandomInt(0, 54); // Random weeks
+  const y = getRandomInt(0, 6);  // Random days
 
-  // Adjust the date
   const DATE = moment()
-    .subtract(1, 'y') // Go back one year
-    .add(1, 'd')      // Add one day to avoid today
-    .add(x, 'w')      // Add random weeks
-    .add(y, 'd')      // Add random days
+    .subtract(1, 'y')
+    .add(x, 'w')
+    .add(y, 'd')
     .format();
 
   const data = { date: DATE };
 
-  console.log(`Committing for date: ${DATE}`);
+  console.log(`Creating commit for date: ${DATE}`);
 
-  // Write the date to the JSON file and commit
-  jsonfile.writeFile(FILE_PATH, data, { spaces: 2 }, (err) => {
+  jsonfile.writeFile(FILE_PATH, data, { spaces: 2 }, async (err) => {
     if (err) {
       console.error('Error writing file:', err);
       return;
     }
 
-    simpleGit()
-      .add(FILE_PATH)
-      .commit(`Commit for date: ${DATE}`, { '--date': DATE })
-      .then(() => {
-        // Recursive call after the current commit completes
-        makeCommit(n - 1);
-      })
-      .catch((commitErr) => {
-        console.error('Error committing:', commitErr);
-      });
+    await simpleGit().add(FILE_PATH).commit(`Commit for date: ${DATE}`, { '--date': DATE });
+    makeCommit(n - 1);
   });
 };
 
-// Start the commit process with 100 commits
-makeCommit(10);
+// Start the commit process
+makeCommit(20);
